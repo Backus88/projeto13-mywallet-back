@@ -4,16 +4,25 @@ const intialTotal = 0;
 
 export async function createUser(req, res) {
     const user = req.body;
-    const passwordHash = bcrypt.hashSync(user.password, 10);
-    await db.collection('users').insertOne({ ...user, password: passwordHash });
-    const newUser = await db
+    const findUser = await db
         .collection('users')
-        .findOne({ password: passwordHash });
-    console.log(newUser);
-    await db.collection('wallet').insertOne({
-        userId: newUser._id,
-        total: intialTotal,
-        wallet: [],
-    });
-    res.sendStatus(201);
+        .findOne({ email: user.email });
+    if (findUser) {
+        res.sendStatus(409);
+    } else {
+        const passwordHash = bcrypt.hashSync(user.password, 10);
+        await db
+            .collection('users')
+            .insertOne({ ...user, password: passwordHash });
+        const newUser = await db
+            .collection('users')
+            .findOne({ password: passwordHash });
+        console.log(newUser);
+        await db.collection('wallet').insertOne({
+            userId: newUser._id,
+            total: intialTotal,
+            wallet: [],
+        });
+        res.sendStatus(201);
+    }
 }
